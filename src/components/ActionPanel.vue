@@ -16,13 +16,14 @@
       </button>
       <button 
         class="action-btn" 
-        :class="{ disabled: isNight || gameOver }"
+        :class="{ disabled: isNight || gameOver || !canHunt }"
         @click="$emit('hunt')"
       >
         <span class="btn-icon">🏹</span>
         <span class="btn-text">狩猎</span>
         <span class="btn-cost">-8 体温</span>
-        <span class="btn-hint">成功率: {{ Math.round(huntRate * 100) }}%</span>
+        <span class="btn-hint" v-if="canHunt">成功率: {{ Math.round(huntRate * 100) }}%</span>
+        <span class="btn-hint" v-else>当前无法狩猎</span>
       </button>
       <button 
         class="action-btn" 
@@ -64,6 +65,7 @@ defineProps({
   gameOver: { type: Boolean, default: false },
   canFire: { type: Boolean, default: false },
   canCraft: { type: Boolean, default: false },
+  canHunt: { type: Boolean, default: true },
   huntRate: { type: Number, default: 0.3 },
   food: { type: Number, default: 0 }
 })

@@ -63,6 +63,7 @@
             :gameOver="gameOver"
             :canFire="canMakeFire"
             :canCraft="wood >= 2 && hide >= 1"
+            :canHunt="canHunt"
             :huntRate="huntSuccessRate"
             :food="food"
             @chop="handleChop"
@@ -86,8 +87,15 @@
       :temperature="temperature"
       :wood="wood"
       :tools="tools"
+      :endingTags="endingTags"
       @restart="handleRestart"
       @load="showSaveManager"
+    />
+
+    <ChoiceEvent
+      v-if="currentEvent"
+      :event="currentEvent"
+      @choose="handleEventChoice"
     />
   </div>
 </template>
@@ -104,6 +112,7 @@ import ActionPanel from './components/ActionPanel.vue'
 import LogPanel from './components/LogPanel.vue'
 import SaveManager from './components/SaveManager.vue'
 import GameOver from './components/GameOver.vue'
+import ChoiceEvent from './components/ChoiceEvent.vue'
 
 const {
   temperature,
@@ -121,12 +130,16 @@ const {
   actionLog,
   isDanger,
   canMakeFire,
+  canHunt,
   huntSuccessRate,
+  currentEvent,
+  endingTags,
   chopWood,
   hunt,
   makeTools,
   makeFire,
   eatFood,
+  resolveEventChoice,
   saveGame,
   loadGame,
   getSaveSlots,
@@ -220,6 +233,11 @@ function handleDelete(slotName) {
 
 function handleRestart() {
   restartGame()
+}
+
+function handleEventChoice(choice) {
+  playSuccess()
+  resolveEventChoice(choice)
 }
 
 function showSaveManager() {
