@@ -561,6 +561,9 @@ export function useGame() {
       blizzardChanceDelta: blizzardChanceDelta.value,
       endingTags: endingTags.value,
       triggeredEvents: triggeredEvents.value,
+      currentEventId: currentEvent.value ? currentEvent.value.id : null,
+      gameOver: gameOver.value,
+      gameOverReason: gameOverReason.value,
       savedAt: Date.now()
     }
     localStorage.setItem(`snowSurvival_${slot}`, JSON.stringify(gameState))
@@ -589,21 +592,34 @@ export function useGame() {
       blizzardChanceDelta.value = gameState.blizzardChanceDelta || 0
       endingTags.value = gameState.endingTags || []
       triggeredEvents.value = gameState.triggeredEvents || []
-      currentEvent.value = null
-      gameOver.value = false
-      gameOverReason.value = ''
+      gameOver.value = !!gameState.gameOver
+      gameOverReason.value = gameState.gameOverReason || ''
       actionLog.value = []
 
-      stopTimers()
-      startTimers()
-
-      if (!isDay.value) {
-        startNightCycle()
+      if (gameState.currentEventId && EVENTS[gameState.currentEventId]) {
+        currentEvent.value = EVENTS[gameState.currentEventId]
+      } else {
+        currentEvent.value = null
       }
 
-      addLog(`成功加载存档：${slot === 'auto' ? '自动存档' : slot}`, 'success')
+      stopTimers()
+
+      if (!gameOver.value) {
+        startTimers()
+
+        if (!isDay.value) {
+          startNightCycle()
+        } else {
+          if (!currentEvent.value) {
+            checkAndTriggerEvent()
+          }
+        }
+      }
+
+      addLog(`成功加载存档：${slot === 'auto' ? '自动存档' : slot}（第 ${dayCount.value} 天）`, 'success')
       return true
     } catch (e) {
+      console.error('loadGame error:', e)
       addLog('存档损坏，无法加载', 'danger')
       return false
     }
@@ -666,6 +682,8 @@ export function useGame() {
     triggeredEvents.value = []
     currentEvent.value = null
 
+    localStorage.removeItem('snowSurvival_auto')
+
     stopTimers()
     startTimers()
 
@@ -673,8 +691,16 @@ export function useGame() {
   }
 
   onMounted(() => {
-    startTimers()
-    addLog('欢迎来到雪地生存！白天收集资源，夜晚保持温暖。关键天数将出现重大抉择！', 'info')
+    const hasAutoSave = !!localStorage.getItem('snowSurvival_auto')
+    if (hasAutoSave) {
+      const loaded = loadGame('auto')
+      if (!loaded) {
+        addLog('欢迎来到雪地生存！白天收集资源，夜晚保持温暖。关键天数将出现重大抉择！', 'info')
+      }
+    } else {
+      startTimers()
+      addLog('欢迎来到雪地生存！白天收集资源，夜晚保持温暖。关键天数将出现重大抉择！', 'info')
+    }
   })
 
   onUnmounted(() => {
